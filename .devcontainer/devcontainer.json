@@ -1,0 +1,8 @@
+{
+  "name": "Alpine Linux",
+  "image": "alpine:latest",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "postCreateCommand": "apk update && apk add bash"
+}
