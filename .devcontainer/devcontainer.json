@@ -4,5 +4,7 @@
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
-  "postCreateCommand": "apk update && apk add bash"
+  "postCreateCommand": "apk update && apk add bash",
+  "user": "codespace"  // Menambahkan pengguna biasa
 }
+
