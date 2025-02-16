@@ -1,10 +1,12 @@
 {
   "name": "Alpine Linux",
-  "image": "alpine:latest",
+  "build": {
+    "dockerfile": "./.devcontainer/Dockerfile"
+  },
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
-  "postCreateCommand": "apk update && apk add bash",
-  "user": "codespace"  // Menambahkan pengguna biasa
+  "postCreateCommand": "apk update && apk add bash"
 }
+
 
