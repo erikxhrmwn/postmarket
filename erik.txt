@@ -1,0 +1,144 @@
+
+Tentu! Berikut adalah tutorial lebih detail untuk membangun AOSP (Android Open Source Project) di perangkat Redmi 4A (MSM8917), beserta bahan-bahannya.
+
+1. Persiapan Lingkungan Build
+
+Sebelum memulai, pastikan Anda memiliki sistem berbasis Linux (Ubuntu disarankan). Berikut adalah langkah-langkah untuk menyiapkan lingkungan build:
+
+a. Instalasi Dependensi di Ubuntu
+
+Untuk membangun AOSP, Anda perlu menginstal beberapa dependensi:
+
+sudo apt update
+sudo apt install -y git python3 repo openjdk-11-jdk build-essential \
+                   liblz4-tool zlib1g-dev g++-multilib \
+                   lib32z1 lib32ncurses6 lib32stdc++6 \
+                   libxml2-utils squashfs-tools
+
+b. Install Android Build Tools
+
+Anda perlu mengunduh alat build repo:
+
+mkdir -p ~/bin
+curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+chmod a+x ~/bin/repo
+
+Tambahkan ~/bin ke dalam PATH agar dapat menjalankan perintah repo dari mana saja:
+
+export PATH=$PATH:~/bin
+
+2. Kloning AOSP dan Kernel
+
+Langkah selanjutnya adalah mengkloning source code AOSP dan kernel untuk Redmi 4A.
+
+a. Inisialisasi Repositori AOSP
+
+Jalankan perintah berikut untuk menginisialisasi repositori AOSP:
+
+mkdir ~/aosp
+cd ~/aosp
+repo init -u https://android.googlesource.com/platform/manifest
+repo sync -j$(nproc)  # Jumlahkan dengan jumlah core CPU untuk mempercepat
+
+b. Kloning Kernel Redmi 4A
+
+Kernel untuk Redmi 4A dapat ditemukan di repositori GitHub. Anda akan menggunakan kernel MSM8917 dari repositori ini:
+
+git clone https://github.com/Thagoo/platform_kernel_xiaomi_msm8917.git kernel/xiaomi/msm8917
+
+3. Kloning Vendor dan Dependencies
+
+Untuk memastikan AOSP memiliki driver dan perangkat keras yang tepat, Anda perlu menambahkan vendor_lindroid, external_lxc, dan libhybris.
+
+a. Vendor Lindroid
+
+Kloning repositori vendor untuk Lindroid:
+
+cd ~/aosp
+git clone https://github.com/lindroid/vendor_lindroid.git vendor/lindroid
+git clone https://github.com/lindroid/external_lxc.git external/lxc
+git clone https://github.com/lindroid/libhybris.git external/libhybris
+
+b. Konfigurasi device.mk
+
+Edit file device.mk di dalam direktori perangkat AOSP untuk menambahkan vendor_lindroid:
+
+echo '$(call inherit-product, vendor/lindroid/lindroid.mk)' >> device/xiaomi/msm8917/device.mk
+
+4. Menyesuaikan Konfigurasi Kernel
+
+Setel defconfig kernel agar sesuai dengan kebutuhan perangkat Redmi 4A. Anda dapat mengedit file arch/arm64/configs atau menggunakan konfigurasi kernel yang sudah ada.
+
+Misalnya, untuk kernel MSM8917, lakukan:
+
+cd kernel/xiaomi/msm8917
+make msm8917_defconfig
+
+Jika diperlukan, Anda bisa menyesuaikan .config lebih lanjut dengan menggunakan menuconfig:
+
+make menuconfig
+
+5. Menambahkan Patch dan Fix
+
+Jika ada patch atau fix tertentu yang diperlukan, seperti soft reboot atau overlayfs hack, tambahkan patch tersebut pada kernel atau sistem AOSP. Ini dilakukan dengan mengunduh patch atau perubahan yang diperlukan dan mengaplikasikannya:
+
+git am <patch-file.patch>
+
+Untuk patch dari link yang disebutkan (seperti patch LMODroid), lakukan hal berikut:
+
+git fetch https://gerrit.libremobileos.com/c/LMODroid/platform_frameworks_native/+/12936
+git cherry-pick <commit-hash>
+
+6. Proses Build AOSP
+
+Sekarang kita siap untuk membangun AOSP.
+
+a. Mengatur Environment
+
+Setelah selesai menyiapkan konfigurasi, jalankan perintah berikut untuk memulai proses build:
+
+cd ~/aosp
+source build/envsetup.sh
+lunch aosp_msm8917-userdebug
+
+b. Build AOSP
+
+Mulai proses build dengan perintah:
+
+make -j$(nproc)
+
+Pastikan untuk menyesuaikan $(nproc) dengan jumlah core CPU Anda untuk mempercepat build. Proses ini akan memakan waktu, tergantung pada kecepatan komputer Anda.
+
+7. Flash AOSP ke Perangkat
+
+Setelah build selesai, Anda dapat melakukan flashing AOSP ke Redmi 4A dengan menggunakan fastboot.
+
+a. Masuk ke Mode Fastboot
+
+Untuk memasuki mode fastboot, matikan perangkat dan tekan tombol Volume Down + Power secara bersamaan hingga perangkat memasuki mode fastboot.
+
+b. Flashing Image
+
+Setelah itu, hubungkan perangkat ke komputer menggunakan kabel USB dan jalankan perintah berikut untuk mem-flash image yang telah dibangun:
+
+fastboot flash boot boot.img
+fastboot flash system system.img
+fastboot flash userdata userdata.img
+
+c. Reboot
+
+Setelah flashing selesai, reboot perangkat:
+
+fastboot reboot
+
+8. Menyelesaikan Setup
+
+Setelah reboot, Anda bisa mengikuti instruksi yang muncul di perangkat untuk menyelesaikan setup. Jangan unduh rootfs untuk saat ini, gunakan new_rootfs_241124.zip.tar.gz untuk rootfs.
+
+9. Mengakses Shell Debian
+
+Jika Anda ingin mengakses shell Debian pada perangkat, gunakan perintah attach untuk masuk ke shell Debian setelah proses selesai:
+
+attach
+
+Ini adalah tutorial dasar untuk membangun AOSP di Redmi 4A (MSM8917). Jika Anda menemui masalah atau ada tahap tertentu yang perlu penjelasan lebih lanjut, beri tahu saya!
