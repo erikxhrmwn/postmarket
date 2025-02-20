@@ -1,4 +1,10 @@
+# Download repo
+mkdir -p ~/bin
+curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+chmod a+x ~/bin/repo
 
+# Tambahkan ke PATH (jika belum)
+export PATH=$PATH:~/bin
 Tentu! Berikut adalah tutorial lebih detail untuk membangun AOSP (Android Open Source Project) di perangkat Redmi 4A (MSM8917), beserta bahan-bahannya.
 
 1. Persiapan Lingkungan Build
