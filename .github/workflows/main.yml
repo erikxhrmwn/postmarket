@@ -1,10 +1,17 @@
 name: Ubuntu VPS
-on: workflow_dispatch  # Jalankan secara manual
+
+on: workflow_dispatch  # Bisa dijalankan secara manual dari tab Actions
+
 jobs:
   run-ubuntu:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Update dan Install Paket
+      - name: Setup environment
         run: |
-          sudo apt update && sudo apt install -y htop curl wget
-          echo "Ubuntu VPS siap digunakan!"
+          echo "Ubuntu VPS is starting..."
+          uname -a
+          lsb_release -a
+
+      - name: Enable tmate session
+        uses: mxschmitt/action-tmate@v3
