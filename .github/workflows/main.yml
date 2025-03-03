@@ -21,7 +21,21 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu make bc flex bison
+          sudo apt install -y gcc-9 g++-9 \
+                             gcc-aarch64-linux-gnu \
+                             make bc flex bison \
+                             cpio libssl-dev libelf-dev \
+                             python3-distutils python3-dev
+
+      - name: Apply Patch to dtc-parser.y
+        run: |
+          sed -i '/#define YYLTYPE_IS_DECLARED 1/i #ifndef YYLTYPE_IS_DECLARED' kernel/scripts/dtc/dtc-parser.y
+          sed -i '/#define YYLTYPE_IS_DECLARED 1/a #endif' kernel/scripts/dtc/dtc-parser.y
+
+      - name: Set up GCC 9 as default
+        run: |
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
 
       - name: Configure Kernel
         run: |
@@ -37,4 +51,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: compiled-kernel
-          path: kernel/arch/arm64/boot/Image.gz-dtb  # Sesuaikan outputnya jika berbeda
+          path: |
+            kernel/arch/arm64/boot/Image.gz-dtb
+            kernel/out/*.img  # Jika ada file output lain
