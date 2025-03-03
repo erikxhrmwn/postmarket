@@ -3,8 +3,8 @@ name: Build Kernel with LXC Support
 on:
   push:
     branches:
-      - main  # Jalankan saat ada push ke branch main
-  workflow_dispatch:  # Bisa dijalankan secara manual di GitHub Actions
+      - main  
+  workflow_dispatch:  
 
 jobs:
   build:
@@ -31,6 +31,11 @@ jobs:
             python3-pip \
             python3-venv
 
+      - name: Patch Device Tree Compiler (DTC)
+        run: |
+          cd kernel/scripts/dtc
+          sed -i 's/YYLTYPE yylloc;/extern YYLTYPE yylloc;/' dtc-lexer.l
+
       - name: Configure Kernel
         run: |
           cd kernel
@@ -39,7 +44,6 @@ jobs:
       - name: Enable LXC Features
         run: |
           cd kernel
-          echo "Menambahkan konfigurasi LXC ke kernel..."
           tee -a .config <<EOF
           CONFIG_NAMESPACES=y
           CONFIG_UTS_NS=y
@@ -85,12 +89,12 @@ jobs:
       - name: Build Kernel
         run: |
           cd kernel
-          make -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
-        if: success()  # Jalankan hanya jika langkah sebelumnya sukses
+          make -k -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+        if: success()
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-kernel
           path: kernel/arch/arm64/boot/Image.gz-dtb
-        if: success()  # Jalankan hanya jika build sukses
+        if: success()
