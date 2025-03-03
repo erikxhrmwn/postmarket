@@ -1,103 +1,17 @@
-name: Build Kernel with LXC Support
+name: Ubuntu VPS
 
-on:
-  push:
-    branches:
-      - main  
-  workflow_dispatch:  
+on: workflow_dispatch  # Bisa dijalankan secara manual dari tab Actions
 
 jobs:
-  build:
+  run-ubuntu:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Clone Kernel Source
+      - name: Setup environment
         run: |
-          git clone --depth=1 --branch 10 https://github.com/NusantaraROM-Devices/kernel_xiaomi_rolex.git kernel
+          echo "Ubuntu VPS is starting..."
+          uname -a
+          lsb_release -a
 
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            gcc-aarch64-linux-gnu \
-            make bc flex bison \
-            build-essential \
-            libssl-dev \
-            libelf-dev \
-            libncurses-dev \
-            python3-pip \
-            python3-venv
-
-      - name: Patch Device Tree Compiler (DTC)
-        run: |
-          cd kernel/scripts/dtc
-          sed -i 's/YYLTYPE yylloc;/extern YYLTYPE yylloc;/' dtc-lexer.l
-
-      - name: Install Older Version of Bison & Flex
-        run: |
-          sudo apt remove -y bison flex
-          sudo apt install -y bison=2:3.5.1+dfsg-1 flex=2.6.4-6
-
-      - name: Configure Kernel
-        run: |
-          cd kernel
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
-
-      - name: Enable LXC Features
-        run: |
-          cd kernel
-          tee -a .config <<EOF
-          CONFIG_NAMESPACES=y
-          CONFIG_UTS_NS=y
-          CONFIG_IPC_NS=y
-          CONFIG_PID_NS=y
-          CONFIG_NET_NS=y
-          CONFIG_CGROUPS=y
-          CONFIG_CGROUP_FREEZER=y
-          CONFIG_CGROUP_PIDS=y
-          CONFIG_CGROUP_DEVICE=y
-          CONFIG_CPUSETS=y
-          CONFIG_MEMCG=y
-          CONFIG_USER_NS=y
-          CONFIG_VETH=y
-          CONFIG_BRIDGE=y
-          CONFIG_NETFILTER=y
-          CONFIG_NETFILTER_XT_MATCH_CONNTRACK=y
-          CONFIG_NETFILTER_XT_TARGET_NFQUEUE=y
-          CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
-          CONFIG_VIRTIO=y
-          CONFIG_VIRTIO_NET=y
-          CONFIG_VHOST_NET=y
-          CONFIG_POSIX_MQUEUE=y
-          CONFIG_SECCOMP=y
-          CONFIG_SECCOMP_FILTER=y
-          CONFIG_NET_CLS_CGROUP=y
-          CONFIG_BLK_CGROUP=y
-          CONFIG_CGROUP_NET_PRIO=y
-          CONFIG_CGROUP_NET_CLASSID=y
-          CONFIG_FHANDLE=y
-          CONFIG_UNIX_DIAG=y
-          CONFIG_INET_DIAG=y
-          CONFIG_IPV6=y
-          CONFIG_CRYPTO_USER_API=y
-          CONFIG_CRYPTO_USER_API_HASH=y
-          CONFIG_CRYPTO_USER_API_SKCIPHER=y
-          CONFIG_CRYPTO_USER_API_RNG=y
-          CONFIG_KEYS=y
-          CONFIG_KEY_DH_OPERATIONS=y
-          EOF
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-
-      - name: Build Kernel
-        run: |
-          cd kernel
-          make KCFLAGS=-Wno-error -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
-
-      - name: Upload Kernel Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: compiled-kernel
-          path: kernel/arch/arm64/boot/Image.gz-dtb
+      - name: Enable tmate session
+        uses: mxschmitt/action-tmate@v3
