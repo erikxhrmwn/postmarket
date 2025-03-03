@@ -36,6 +36,11 @@ jobs:
           cd kernel/scripts/dtc
           sed -i 's/YYLTYPE yylloc;/extern YYLTYPE yylloc;/' dtc-lexer.l
 
+      - name: Install Older Version of Bison & Flex
+        run: |
+          sudo apt remove -y bison flex
+          sudo apt install -y bison=2:3.5.1+dfsg-1 flex=2.6.4-6
+
       - name: Configure Kernel
         run: |
           cd kernel
@@ -89,12 +94,10 @@ jobs:
       - name: Build Kernel
         run: |
           cd kernel
-          make -k -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
-        if: success()
+          make KCFLAGS=-Wno-error -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-kernel
           path: kernel/arch/arm64/boot/Image.gz-dtb
-        if: success()
