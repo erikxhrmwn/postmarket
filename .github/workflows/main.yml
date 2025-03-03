@@ -1,26 +1,40 @@
-name: Build Android Kernel
+name: Build Kernel
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main  # Jalankan ketika ada push ke branch main
+  workflow_dispatch:  # Bisa dijalankan secara manual di GitHub Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Clone Kernel Source
+        run: |
+          git clone --depth=1 --branch 10 https://github.com/NusantaraROM-Devices/kernel_xiaomi_rolex.git kernel
+
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential bc cpio flex bison \
-            libssl-dev libncurses-dev ccache python3 git
+          sudo apt install -y gcc-aarch64-linux-gnu make bc flex bison
 
-      - name: Clone Kernel Source
+      - name: Configure Kernel
         run: |
-          git clone --depth=1 https://github.com/NusantaraROM-Devices/kernel_xiaomi_rolex.git
+          cd kernel
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
 
       - name: Build Kernel
         run: |
           cd kernel
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
           make -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-kernel
+          path: kernel/arch/arm64/boot/Image.gz-dtb  # Sesuaikan outputnya jika berbeda
