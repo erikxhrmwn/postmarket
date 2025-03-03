@@ -1,9 +1,9 @@
-name: Build Kernel
+name: Build Kernel with LXC Support
 
 on:
   push:
     branches:
-      - main  # Jalankan ketika ada push ke branch main
+      - main  # Jalankan saat ada push ke branch main
   workflow_dispatch:  # Bisa dijalankan secara manual di GitHub Actions
 
 jobs:
@@ -21,36 +21,76 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y gcc-9 g++-9 \
-                             gcc-aarch64-linux-gnu \
-                             make bc flex bison \
-                             cpio libssl-dev libelf-dev \
-                             python3-distutils python3-dev
-
-      - name: Apply Patch to dtc-parser.y
-        run: |
-          sed -i '/#define YYLTYPE_IS_DECLARED 1/i #ifndef YYLTYPE_IS_DECLARED' kernel/scripts/dtc/dtc-parser.y
-          sed -i '/#define YYLTYPE_IS_DECLARED 1/a #endif' kernel/scripts/dtc/dtc-parser.y
-
-      - name: Set up GCC 9 as default
-        run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100
+          sudo apt install -y \
+            gcc-aarch64-linux-gnu \
+            make bc flex bison \
+            build-essential \
+            libssl-dev \
+            libelf-dev \
+            libncurses-dev \
+            python3-pip \
+            python3-venv
 
       - name: Configure Kernel
         run: |
           cd kernel
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
 
+      - name: Enable LXC Features
+        run: |
+          cd kernel
+          echo "Menambahkan konfigurasi LXC ke kernel..."
+          tee -a .config <<EOF
+          CONFIG_NAMESPACES=y
+          CONFIG_UTS_NS=y
+          CONFIG_IPC_NS=y
+          CONFIG_PID_NS=y
+          CONFIG_NET_NS=y
+          CONFIG_CGROUPS=y
+          CONFIG_CGROUP_FREEZER=y
+          CONFIG_CGROUP_PIDS=y
+          CONFIG_CGROUP_DEVICE=y
+          CONFIG_CPUSETS=y
+          CONFIG_MEMCG=y
+          CONFIG_USER_NS=y
+          CONFIG_VETH=y
+          CONFIG_BRIDGE=y
+          CONFIG_NETFILTER=y
+          CONFIG_NETFILTER_XT_MATCH_CONNTRACK=y
+          CONFIG_NETFILTER_XT_TARGET_NFQUEUE=y
+          CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+          CONFIG_VIRTIO=y
+          CONFIG_VIRTIO_NET=y
+          CONFIG_VHOST_NET=y
+          CONFIG_POSIX_MQUEUE=y
+          CONFIG_SECCOMP=y
+          CONFIG_SECCOMP_FILTER=y
+          CONFIG_NET_CLS_CGROUP=y
+          CONFIG_BLK_CGROUP=y
+          CONFIG_CGROUP_NET_PRIO=y
+          CONFIG_CGROUP_NET_CLASSID=y
+          CONFIG_FHANDLE=y
+          CONFIG_UNIX_DIAG=y
+          CONFIG_INET_DIAG=y
+          CONFIG_IPV6=y
+          CONFIG_CRYPTO_USER_API=y
+          CONFIG_CRYPTO_USER_API_HASH=y
+          CONFIG_CRYPTO_USER_API_SKCIPHER=y
+          CONFIG_CRYPTO_USER_API_RNG=y
+          CONFIG_KEYS=y
+          CONFIG_KEY_DH_OPERATIONS=y
+          EOF
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+
       - name: Build Kernel
         run: |
           cd kernel
           make -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+        if: success()  # Jalankan hanya jika langkah sebelumnya sukses
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-kernel
-          path: |
-            kernel/arch/arm64/boot/Image.gz-dtb
-            kernel/out/*.img  # Jika ada file output lain
+          path: kernel/arch/arm64/boot/Image.gz-dtb
+        if: success()  # Jalankan hanya jika build sukses
