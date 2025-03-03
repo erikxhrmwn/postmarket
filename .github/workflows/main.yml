@@ -1,17 +1,26 @@
-name: Ubuntu VPS
+name: Build Android Kernel
 
-on: workflow_dispatch  # Bisa dijalankan secara manual dari tab Actions
+on: [push, workflow_dispatch]
 
 jobs:
-  run-ubuntu:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Setup environment
-        run: |
-          echo "Ubuntu VPS is starting..."
-          uname -a
-          lsb_release -a
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Enable tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bc cpio flex bison \
+            libssl-dev libncurses-dev ccache python3 git
+
+      - name: Clone Kernel Source
+        run: |
+          git clone --depth=1 https://github.com/NusantaraROM-Devices/kernel_xiaomi_rolex.git
+
+      - name: Build Kernel
+        run: |
+          cd kernel
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+          make -j$(nproc) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
