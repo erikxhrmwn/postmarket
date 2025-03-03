@@ -1,0 +1,17 @@
+name: Ubuntu VPS
+
+on: workflow_dispatch  # Bisa dijalankan secara manual dari tab Actions
+
+jobs:
+  run-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup environment
+        run: |
+          echo "Ubuntu VPS is starting..."
+          uname -a
+          lsb_release -a
+
+      - name: Enable tmate session
+        uses: mxschmitt/action-tmate@v3
